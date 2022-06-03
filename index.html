@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secret Knock Detector</title>
+  <style>
+    html {
+      font-family: sans-serif;
+    }
+
+    .display {
+      width: 100%;
+      max-width: 400px;
+      height: 16px;
+      position: relative;
+      background-color: antiquewhite;
+    }
+
+    .display .knock {
+      position: absolute;
+      background-color: darkgoldenrod;
+      height: 100%;
+      width: 2px;
+    }
+  </style>
+</head>
+<body>
+  <button id="record-button" type="button" onclick="toggleRecord()">Record Reference Knocks</button>
+  <p>Reference Knock:</p>
+  <div class="display" id="display-ref"></div>
+  <p>Your Knock:</p>
+  <div class="display" id="display-check"></div>
+  <h1 id="result"></h1>
+  <script>
+    const MATCH_THRESH = 0.01;
+    let startTime = Date.now();
+    let referenceTaps = [];
+    let checkTaps = [];
+    let isRecording = false;
+
+    function toggleRecord () {
+      if (!isRecording) {
+        startTime = Date.now();
+        referenceTaps = [];
+        document.getElementById('record-button').innerHTML = 'Stop Recording'
+      } else {
+        document.getElementById('record-button').innerHTML = 'Record Reference Knocks'
+        displayTaps(referenceTaps, 'display-ref');
+      }
+      document.getElementById('record-button').blur();
+      isRecording = !isRecording
+    }
+
+    function onTap () {
+      let t = Date.now()
+      console.log(t);
+      document.getElementById('result').innerHTML = '';
+
+      if (isRecording) {
+        referenceTaps.push(t);
+      } else {
+        // if (checkTaps.length >= 1 && t - checkTaps[checkTaps.length - 1] > RESET_THRESH)
+        //   checkTaps = [];
+        checkTaps.push(t);
+        if (referenceTaps.length > 0 && checkTaps.length > referenceTaps.length) {
+          checkTaps.splice(0, checkTaps.length - referenceTaps.length);
+        }
+        displayTaps(checkTaps, 'display-check');
+        let dist = tapsDistance(referenceTaps, checkTaps)
+        console.log('dist', dist);
+        if (dist <= MATCH_THRESH) {
+          console.log("MATCH!");
+          console.log(document.getElementById('result'));
+          document.getElementById('result').innerHTML = 'MATCH!';
+        }
+      }
+    }
+
+    function normalizeTaps (taps) {
+      let timeSpan = taps[taps.length - 1] - taps[0];
+      let firstTapTime = taps[0];
+      console.log(taps, timeSpan, firstTapTime);
+      return taps.map(t => (t - firstTapTime) / timeSpan);
+    }
+
+    function displayTaps (taps, divId) {
+      let normalizedTaps = normalizeTaps(taps);
+      let container = document.getElementById(divId);
+
+      container.innerHTML = "";
+      
+      console.log(taps, normalizedTaps);
+      
+      normalizedTaps.forEach(t => {
+        var newKnock = document.createElement('div');
+        newKnock.className = 'knock';
+        newKnock.style.left = `${t * 100}%`;
+        container.appendChild(newKnock)
+      });
+    }
+
+    function tapsDistance (tapsA, tapsB) {
+      console.log('compare', tapsA, tapsB);
+
+      if (tapsA.length !== tapsB.length)
+        return Infinity;
+
+      let normA = normalizeTaps(tapsA);
+      let normB = normalizeTaps(tapsB);
+
+      let dist = normA.reduce(
+        (acc, ta, i) => acc + Math.abs(ta - normB[i]), 
+        0
+      ) / normA.length;
+      return dist;
+    }
+
+    document.body.onkeyup = function(e) {
+      if (e.key == " " ||
+          e.code == "Space" ||      
+          e.keyCode == 32      
+      ) {
+        onTap();
+      }
+    }
+
+  </script>
+</body>
+</html>
