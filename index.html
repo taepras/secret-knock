@@ -27,7 +27,7 @@
   </style>
 </head>
 <body>
-  <button id="record-button" type="button" onclick="toggleRecord()">Record Reference Knocks</button>
+  <button id="record-button" type="button">Record Reference Knocks</button>
   <p>Reference Knock:</p>
   <div class="display" id="display-ref"></div>
   <p>Your Knock:</p>
@@ -126,6 +126,18 @@
       }
     }
 
+    document.addEventListener("touchstart", function (e) {
+      if (e.target === document.getElementById('record-button'))
+        return;
+        
+      onTap();
+    });
+
+    document.getElementById('record-button')
+      .addEventListener("click", function (e) {
+        e.stopPropagation();
+        toggleRecord();
+      });
   </script>
 </body>
 </html>
